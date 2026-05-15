@@ -44,6 +44,12 @@ If the post-commit release step fails, fix it before claiming the commit is comp
 scripts/release-current-commit.sh
 ```
 
+To backfill a specific commit:
+
+```bash
+scripts/release-current-commit.sh <commit-sha>
+```
+
 Use `MCAI_SKIP_PRE_COMMIT=1` or `MCAI_SKIP_POST_COMMIT_RELEASE=1` only for emergency local recovery, and mention that exception in the final response.
 
 ## Documentation
@@ -52,4 +58,3 @@ Use `MCAI_SKIP_PRE_COMMIT=1` or `MCAI_SKIP_POST_COMMIT_RELEASE=1` only for emerg
 - `docs/MCP_TOOLS.md`: public MCP tool contract.
 - `docs/OPERATIONS.md`: installation, configuration, verification, and troubleshooting.
 - `docs/ARCHITECTURE.md`: component-level architecture notes.
-

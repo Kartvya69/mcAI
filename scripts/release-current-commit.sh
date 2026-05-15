@@ -2,6 +2,10 @@
 set -euo pipefail
 
 repo_root="$(git rev-parse --show-toplevel)"
+mapfile -t git_env_vars < <(git rev-parse --local-env-vars)
+for git_env_var in "${git_env_vars[@]}"; do
+  unset "$git_env_var"
+done
 cd "$repo_root"
 
 if ! command -v gh >/dev/null 2>&1; then
@@ -9,7 +13,8 @@ if ! command -v gh >/dev/null 2>&1; then
   exit 1
 fi
 
-sha="$(git rev-parse HEAD)"
+target_ref="${1:-HEAD}"
+sha="$(git rev-parse "$target_ref")"
 short_sha="${sha:0:12}"
 tag="commit-${short_sha}"
 branch="$(git symbolic-ref --quiet --short HEAD || true)"

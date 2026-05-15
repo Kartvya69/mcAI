@@ -54,6 +54,12 @@ Manual rerun for the current commit:
 scripts/release-current-commit.sh
 ```
 
+Backfill a specific commit:
+
+```bash
+scripts/release-current-commit.sh <commit-sha>
+```
+
 ## Install
 
 Stop the target Paper server, then copy the shaded jar into `plugins/`:
