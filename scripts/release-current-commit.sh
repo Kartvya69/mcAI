@@ -60,6 +60,12 @@ if [[ -n "$branch" ]]; then
 fi
 
 if gh release view "$tag" --repo "$repo" >/dev/null 2>&1; then
+  gh release edit "$tag" \
+    --repo "$repo" \
+    --target "$sha" \
+    --title "mcAI jar ${short_sha}" \
+    --notes "Automated local jar release for commit ${sha}." \
+    --prerelease >/dev/null
   gh release upload "$tag" "$artifact" --repo "$repo" --clobber
 else
   gh release create "$tag" "$artifact" \
@@ -78,6 +84,12 @@ if [[ "$update_latest" == "true" ]]; then
   git push origin refs/tags/latest --force >/dev/null
 
   if gh release view latest --repo "$repo" >/dev/null 2>&1; then
+    gh release edit latest \
+      --repo "$repo" \
+      --target "$sha" \
+      --title "Latest mcAI jar" \
+      --notes "Moving latest jar release for commit ${sha}." \
+      --prerelease >/dev/null
     gh release upload latest "$latest_artifact" --repo "$repo" --clobber
   else
     gh release create latest "$latest_artifact" \
