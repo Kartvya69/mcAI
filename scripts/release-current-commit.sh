@@ -18,7 +18,13 @@ sha="$(git rev-parse "$target_ref")"
 short_sha="${sha:0:12}"
 tag="commit-${short_sha}"
 branch="$(git symbolic-ref --quiet --short HEAD || true)"
+head_sha="$(git rev-parse HEAD)"
+update_latest=false
 repo="${MCAI_GITHUB_REPO:-}"
+
+if [[ "$sha" == "$head_sha" ]]; then
+  update_latest=true
+fi
 
 if [[ -z "$repo" ]]; then
   repo="$(gh repo view --json nameWithOwner -q .nameWithOwner)"
@@ -64,4 +70,26 @@ else
     --prerelease
 fi
 
+if [[ "$update_latest" == "true" ]]; then
+  latest_artifact="$tmp_root/mcAI-latest.jar"
+  cp "$artifact" "$latest_artifact"
+
+  git tag -f latest "$sha" >/dev/null
+  git push origin refs/tags/latest --force >/dev/null
+
+  if gh release view latest --repo "$repo" >/dev/null 2>&1; then
+    gh release upload latest "$latest_artifact" --repo "$repo" --clobber
+  else
+    gh release create latest "$latest_artifact" \
+      --repo "$repo" \
+      --target "$sha" \
+      --title "Latest mcAI jar" \
+      --notes "Moving latest jar release for commit ${sha}." \
+      --prerelease
+  fi
+fi
+
 echo "Created/updated release $tag for $sha"
+if [[ "$update_latest" == "true" ]]; then
+  echo "Updated latest release for $sha"
+fi

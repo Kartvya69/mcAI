@@ -37,6 +37,7 @@ This repository intentionally does not use GitHub Actions for jar publishing. Th
    - pushes the current branch to `origin`
    - creates or updates tag `commit-<12-char-sha>`
    - uploads `mcAI-<12-char-sha>.jar` as a GitHub release asset
+   - when releasing current `HEAD`, moves tag `latest` and uploads `mcAI-latest.jar`
 
 If the post-commit release step fails, fix it before claiming the commit is complete:
 

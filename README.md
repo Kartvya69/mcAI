@@ -164,6 +164,11 @@ git config core.hooksPath .githooks
 
 After that, each commit runs the Gradle verification locally, pushes the commit, creates tag `commit-<12-char-sha>`, and uploads `mcAI-<12-char-sha>.jar` as a GitHub prerelease asset.
 
+The newest committed jar is always available from the moving `latest` tag:
+
+- [Latest release tag](https://github.com/Kartvya69/mcAI/releases/tag/latest)
+- [Download latest jar](https://github.com/Kartvya69/mcAI/releases/download/latest/mcAI-latest.jar)
+
 If the post-commit release step needs to be rerun manually:
 
 ```bash

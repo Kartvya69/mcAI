@@ -47,6 +47,12 @@ After installation:
 - the current branch is pushed to `origin`
 - tag `commit-<12-char-sha>` is created or reused
 - jar asset `mcAI-<12-char-sha>.jar` is uploaded to the GitHub release
+- when releasing current `HEAD`, tag `latest` is moved and `mcAI-latest.jar` is uploaded
+
+Stable latest links:
+
+- `https://github.com/Kartvya69/mcAI/releases/tag/latest`
+- `https://github.com/Kartvya69/mcAI/releases/download/latest/mcAI-latest.jar`
 
 Manual rerun for the current commit:
 
