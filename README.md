@@ -152,6 +152,24 @@ The shaded plugin jar is written to:
 build/libs/mcAI-0.1.0.jar
 ```
 
+## Commit Jars
+
+This repository publishes jar artifacts from local git hooks instead of GitHub Actions.
+
+Install the tracked hooks once per clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+After that, each commit runs the Gradle verification locally, pushes the commit, creates tag `commit-<12-char-sha>`, and uploads `mcAI-<12-char-sha>.jar` as a GitHub prerelease asset.
+
+If the post-commit release step needs to be rerun manually:
+
+```bash
+scripts/release-current-commit.sh
+```
+
 ## Repository Hygiene
 
 The local Paper runtime under `run/`, Gradle caches, Kotlin session files, and build outputs are ignored. This repository should contain source, Gradle metadata, tests, and documentation, not generated server worlds or packaged runtime state.

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "${MCAI_SKIP_POST_COMMIT_RELEASE:-}" == "1" ]]; then
+  echo "Skipping mcAI commit release because MCAI_SKIP_POST_COMMIT_RELEASE=1"
+  exit 0
+fi
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+scripts/release-current-commit.sh

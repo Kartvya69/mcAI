@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "${MCAI_SKIP_PRE_COMMIT:-}" == "1" ]]; then
+  echo "Skipping mcAI pre-commit verification because MCAI_SKIP_PRE_COMMIT=1"
+  exit 0
+fi
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+./gradlew test build

@@ -29,6 +29,31 @@ Optional artifact inspection:
 jar tf build/libs/mcAI-0.1.0.jar | rg '^(dev/mcai|io/ktor|io/modelcontextprotocol)' | head -n 20
 ```
 
+## Commit Release Artifacts
+
+Jar publishing is handled locally and intentionally does not use GitHub Actions.
+
+Install the tracked hooks once per clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+After installation:
+
+- `.githooks/pre-commit` runs `./gradlew test build`
+- `.githooks/post-commit` runs `scripts/release-current-commit.sh`
+- the release script builds from a temporary worktree at the exact commit SHA
+- the current branch is pushed to `origin`
+- tag `commit-<12-char-sha>` is created or reused
+- jar asset `mcAI-<12-char-sha>.jar` is uploaded to the GitHub release
+
+Manual rerun for the current commit:
+
+```bash
+scripts/release-current-commit.sh
+```
+
 ## Install
 
 Stop the target Paper server, then copy the shaded jar into `plugins/`:
@@ -288,4 +313,3 @@ Fix:
 Fix:
 
 - Increase `limits.commandCaptureMillis` if a command logs after the capture window.
-
