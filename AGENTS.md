@@ -7,6 +7,7 @@ mcAI is a Kotlin Paper/Folia plugin that exposes an authenticated MCP HTTP serve
 ## Required Workflow
 
 - Keep this repository source-only. Do not commit local Paper runtime state, build outputs, Gradle caches, server worlds, generated logs, or bearer tokens.
+- Any agent that changes files must commit and push those changes before reporting completion. Keep commits focused, use clear messages, and do not leave intentional edits unstaged, uncommitted, or unpushed unless the user explicitly asks for that.
 - Use the Gradle wrapper for verification:
   - `./gradlew test`
   - `./gradlew build`
