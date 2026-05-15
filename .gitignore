@@ -1,0 +1,14 @@
+.gradle/
+.kotlin/
+build/
+run/
+out/
+
+*.class
+*.log
+*.pid
+*.hprof
+
+.idea/
+*.iml
+.DS_Store

@@ -1,0 +1,33 @@
+server:
+  host: "0.0.0.0"
+  port: null
+
+auth:
+  token: "<generated-on-first-start>"
+
+limits:
+  maxReadBytes: 104857600
+  maxWriteBytes: 104857600
+  maxDirectoryEntries: 10000
+  commandCaptureMillis: 1500
+
+downloadPolicy:
+  connectTimeoutMillis: 5000
+  requestTimeoutMillis: 30000
+  readTimeoutMillis: 30000
+  blockPrivateNetworks: true
+  trustedHosts: []
+  trustedCidrs: []
+  maxRedirects: 5
+
+pathIndex:
+  reconciliationIntervalMillis: 600000
+  excludeGlobs:
+    - ".git/**"
+    - ".gradle/**"
+    - "build/**"
+    - "cache/**"
+    - "libraries/**"
+    - "versions/**"
+    - "world*/region/**"
+    - "world*/entities/**"

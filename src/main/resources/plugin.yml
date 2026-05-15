@@ -1,0 +1,7 @@
+name: mcAI
+version: ${version}
+main: dev.mcai.McAiPlugin
+api-version: '1.21'
+folia-supported: true
+description: MCP server for Paper/Folia Minecraft administration.
+author: mcAI
