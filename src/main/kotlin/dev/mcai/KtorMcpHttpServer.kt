@@ -26,6 +26,7 @@ class KtorMcpHttpServer(
     private val authToken: String,
     private val mcpServerFactory: McAiMcpServerFactory,
     private val logger: Logger,
+    private val verboseLogging: Boolean = false,
 ) {
     private var engine: EmbeddedServer<CIOApplicationEngine, CIOApplicationEngine.Configuration>? = null
     var boundPort: Int = port
@@ -33,6 +34,7 @@ class KtorMcpHttpServer(
 
     fun start() {
         check(engine == null) { "MCP HTTP server is already started" }
+        McAiLoggingControls.apply(verboseLogging)
         val started = embeddedServer(CIO, host = host, port = port) {
             install(CORS) {
                 anyHost()

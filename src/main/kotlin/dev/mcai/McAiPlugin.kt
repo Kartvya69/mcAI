@@ -10,6 +10,7 @@ open class McAiPlugin : JavaPlugin() {
 
     override fun onEnable() {
         val config = McAiConfigRepository(dataFolder.toPath().resolve("config.yml")).load()
+        McAiLoggingControls.apply(config.logging.verbose)
         val minecraftPort = runCatching { server.port }.getOrDefault(25565)
         val decision = McAiStartupDecider.decide(config, minecraftPort)
 
@@ -45,8 +46,16 @@ open class McAiPlugin : JavaPlugin() {
             host = bind.host,
             port = bind.port,
             authToken = config.auth.token,
-            mcpServerFactory = McAiMcpServerFactory(fs, console, powerActions, description.version, logger),
+            mcpServerFactory = McAiMcpServerFactory(
+                fs,
+                console,
+                powerActions,
+                description.version,
+                logger,
+                verboseLogging = config.logging.verbose,
+            ),
             logger = logger,
+            verboseLogging = config.logging.verbose,
         )
 
         try {

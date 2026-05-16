@@ -117,6 +117,33 @@ Recommended practice:
 - Bind to `127.0.0.1` unless remote MCP access is required.
 - If remote access is required, use a reverse proxy, tunnel, VPN, or firewall outside the plugin.
 
+## Logging
+
+mcAI defaults to quiet logging:
+
+```yaml
+logging:
+  verbose: false
+```
+
+Existing configs without this section are backfilled with `verbose: false` on the next plugin load.
+
+Quiet mode keeps operationally important messages:
+
+- startup, disabled-state, listening, and auth-token config-location messages
+- MCP bearer auth failures
+- MCP tool errors
+- power action warnings and reasons
+- fatal MCP startup errors
+
+Quiet mode suppresses routine noise:
+
+- per-tool `MCP tool call: ...` messages
+- routine MCP Kotlin SDK feature/protocol INFO logs
+- routine Ktor startup/plugin INFO logs
+
+Temporarily set `logging.verbose: true` when debugging MCP protocol negotiation, raw SDK transport behavior, or individual tool-call flow. Return it to `false` for normal operation to keep `logs/latest.log` readable.
+
 ## Power Actions
 
 `power_actions` is a write-capable MCP tool for whole-server stop and restart operations.

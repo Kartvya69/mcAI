@@ -31,3 +31,6 @@ pathIndex:
     - "versions/**"
     - "world*/region/**"
     - "world*/entities/**"
+
+logging:
+  verbose: false

@@ -6,15 +6,16 @@ mcAI is intentionally plugin-only. It runs inside Paper/Folia and starts an auth
 
 1. Paper loads `dev.mcai.McAiPlugin`.
 2. `McAiConfigRepository` loads or creates `plugins/mcAI/config.yml`.
-3. `McAiStartupDecider` checks whether MCP should be enabled.
-4. If enabled, `McAiPlugin` creates:
+3. `McAiLoggingControls` applies quiet or verbose logging behavior.
+4. `McAiStartupDecider` checks whether MCP should be enabled.
+5. If enabled, `McAiPlugin` creates:
    - `FileSystemTools`
    - `ConsoleTools`
    - `PowerActions`
    - `McAiMcpServerFactory`
    - `KtorMcpHttpServer`
-5. `KtorMcpHttpServer` serves MCP at `/mcp`.
-6. `McAiMcpServerFactory` registers the public tool surface and MCP server instructions.
+6. `KtorMcpHttpServer` serves MCP at `/mcp`.
+7. `McAiMcpServerFactory` registers the public tool surface and MCP server instructions.
 
 ## Main Components
 
@@ -31,6 +32,13 @@ Defines config data and first-run generation:
 - file/read/write limits
 - downloader policy
 - path index policy
+- quiet/verbose runtime logging
+
+Existing config files are rewritten after load so missing sections, including `logging.verbose`, are backfilled with defaults.
+
+### `McAiLoggingControls`
+
+Applies the `logging.verbose` setting before the Ktor MCP server starts. Quiet mode leaves mcAI operational warnings and errors visible while raising routine Ktor and MCP SDK logger thresholds to warnings-or-higher. `McAiMcpServerFactory` also uses the setting to suppress routine per-tool `MCP tool call: ...` INFO logs unless verbose logging is enabled.
 
 ### `KtorMcpHttpServer`
 

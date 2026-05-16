@@ -27,9 +27,12 @@ class ConfigStartupTest {
         assertEquals(true, config.downloadPolicy.blockPrivateNetworks)
         assertEquals(600_000, config.pathIndex.reconciliationIntervalMillis)
         assertTrue("cache/**" in config.pathIndex.excludeGlobs)
+        assertEquals(false, config.logging.verbose)
         assertTrue(configFile.readText().contains("token: generated-token"))
         assertTrue(configFile.readText().contains("downloadPolicy:"))
         assertTrue(configFile.readText().contains("pathIndex:"))
+        assertTrue(configFile.readText().contains("logging:"))
+        assertTrue(configFile.readText().contains("verbose: false"))
     }
 
     @Test
@@ -52,6 +55,49 @@ class ConfigStartupTest {
         assertEquals(25577, config.server.port)
         assertEquals("existing-token", config.auth.token)
         assertNotEquals("generated-token", config.auth.token)
+    }
+
+    @Test
+    fun `existing config without logging section loads quiet logging and is backfilled`() {
+        val dir = createTempDirectory("mcai-config")
+        val configFile = dir.resolve("config.yml")
+        configFile.writeText(
+            """
+            server:
+              host: "127.0.0.1"
+              port: 25577
+            auth:
+              token: "existing-token"
+            """.trimIndent(),
+        )
+
+        val config = McAiConfigRepository(configFile, tokenGenerator = { "generated-token" }).load()
+
+        assertEquals(false, config.logging.verbose)
+        assertTrue(configFile.readText().contains("logging:"))
+        assertTrue(configFile.readText().contains("verbose: false"))
+    }
+
+    @Test
+    fun `verbose logging config parses true`() {
+        val dir = createTempDirectory("mcai-config")
+        val configFile = dir.resolve("config.yml")
+        configFile.writeText(
+            """
+            server:
+              host: "127.0.0.1"
+              port: 25577
+            auth:
+              token: "existing-token"
+            logging:
+              verbose: true
+            """.trimIndent(),
+        )
+
+        val config = McAiConfigRepository(configFile, tokenGenerator = { "generated-token" }).load()
+
+        assertEquals(true, config.logging.verbose)
+        assertTrue(configFile.readText().contains("verbose: true"))
     }
 
     @Test

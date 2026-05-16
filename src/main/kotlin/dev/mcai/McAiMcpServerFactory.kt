@@ -33,6 +33,7 @@ class McAiMcpServerFactory(
     private val powerActions: PowerActions,
     private val version: String,
     private val logger: Logger = Logger.getLogger(McAiMcpServerFactory::class.java.name),
+    private val verboseLogging: Boolean = false,
 ) {
     fun create(): Server {
         val server = Server(
@@ -166,7 +167,9 @@ class McAiMcpServerFactory(
             toolAnnotations = ToolAnnotations(readOnlyHint = readOnly, openWorldHint = false),
         ) { request ->
             val arguments = request.arguments ?: JsonObject(emptyMap())
-            logger.info("MCP tool call: $name")
+            if (verboseLogging) {
+                logger.info("MCP tool call: $name")
+            }
             try {
                 structuredResult(block(arguments))
             } catch (throwable: Throwable) {

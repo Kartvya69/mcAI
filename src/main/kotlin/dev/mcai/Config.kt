@@ -42,12 +42,17 @@ data class McAiPathIndexConfig(
     val excludeGlobs: List<String> = DEFAULT_PATH_INDEX_EXCLUDE_GLOBS,
 )
 
+data class McAiLoggingConfig(
+    val verbose: Boolean = false,
+)
+
 data class McAiConfig(
     val server: McAiServerConfig = McAiServerConfig(),
     val auth: McAiAuthConfig,
     val limits: McAiLimits = McAiLimits(),
     val downloadPolicy: McAiDownloadPolicy = McAiDownloadPolicy(),
     val pathIndex: McAiPathIndexConfig = McAiPathIndexConfig(),
+    val logging: McAiLoggingConfig = McAiLoggingConfig(),
 )
 
 enum class McAiDisabledReason {
@@ -105,6 +110,7 @@ class McAiConfigRepository(
         val limits = values.section("limits")
         val downloadPolicy = values.section("downloadPolicy")
         val pathIndex = values.section("pathIndex")
+        val logging = values.section("logging")
 
         val config = McAiConfig(
             server = McAiServerConfig(
@@ -132,6 +138,9 @@ class McAiConfigRepository(
             pathIndex = McAiPathIndexConfig(
                 reconciliationIntervalMillis = pathIndex.long("reconciliationIntervalMillis") ?: 600_000,
                 excludeGlobs = pathIndex.stringList("excludeGlobs").ifEmpty { DEFAULT_PATH_INDEX_EXCLUDE_GLOBS },
+            ),
+            logging = McAiLoggingConfig(
+                verbose = logging.boolean("verbose") ?: false,
             ),
         )
 
@@ -179,6 +188,9 @@ class McAiConfigRepository(
             "pathIndex" to linkedMapOf(
                 "reconciliationIntervalMillis" to config.pathIndex.reconciliationIntervalMillis,
                 "excludeGlobs" to config.pathIndex.excludeGlobs,
+            ),
+            "logging" to linkedMapOf(
+                "verbose" to config.logging.verbose,
             ),
         )
         configFile.writeText(yaml.dump(document))

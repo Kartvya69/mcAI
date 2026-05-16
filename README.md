@@ -13,6 +13,7 @@ mcAI is a Paper/Folia plugin that exposes a bearer-protected MCP HTTP server for
 - Native `power_actions` tool for authenticated stop/restart operations
 - MCP server instructions that tell agents to inspect local plugin files first, then check official plugin docs or trusted sources before editing unfamiliar plugin configuration
 - First-run config generation with a generated bearer token
+- Quiet runtime logging by default, with `logging.verbose` for raw MCP/Ktor/SDK debugging logs
 - Java 21, Kotlin, Ktor, and the MCP Kotlin SDK
 
 ## Security Model
@@ -115,7 +116,12 @@ pathIndex:
     - "versions/**"
     - "world*/region/**"
     - "world*/entities/**"
+
+logging:
+  verbose: false
 ```
+
+`logging.verbose` defaults to `false`, including when older config files are backfilled on the next plugin load. Quiet mode keeps startup, disabled-state, listening, token-location, auth-failure, tool-error, power-action warning, and fatal startup logs, while suppressing routine per-tool MCP call logs and routine Ktor/MCP SDK INFO logs. Set it to `true` temporarily when you need raw protocol and tool-call logging for debugging.
 
 See [docs/OPERATIONS.md](docs/OPERATIONS.md) for deployment and safety notes.
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for component and runtime flow details.
