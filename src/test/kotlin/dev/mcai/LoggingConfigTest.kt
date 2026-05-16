@@ -101,6 +101,10 @@ class LoggingConfigTest {
     fun `quiet logging controls keep routine SDK and Ktor loggers at warning or higher`() {
         McAiLoggingControls.apply(verbose = false)
 
+        assertTrue("FeatureRegistry[Tool]" in McAiLoggingControls.routineLoggerNames)
+        assertTrue("io.modelcontextprotocol.kotlin.sdk.shared.Protocol" in McAiLoggingControls.routineLoggerNames)
+        assertTrue("io.modelcontextprotocol.kotlin.sdk.server.ServerSessionRegistry" in McAiLoggingControls.routineLoggerNames)
+
         McAiLoggingControls.routineLoggerNames.forEach { loggerName ->
             val logger = Logger.getLogger(loggerName)
             assertEquals(Level.WARNING, logger.level)
