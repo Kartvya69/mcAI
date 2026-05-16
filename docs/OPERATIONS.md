@@ -126,6 +126,7 @@ Security and safety notes:
 - MCP bearer authentication is the security boundary. Any client with the token can take the server offline.
 - `action: "stop"` calls the native Bukkit/Paper shutdown API.
 - `action: "restart"` calls the native Bukkit/Paper restart API.
+- `action: "restart"` requires the `settings.restart-script` file configured in `spigot.yml` to exist. Paper passes this script to the OS shell when restarting.
 - Use `power_actions` for stop/restart instead of sending `stop` or `restart` through `console_send_command`.
 - `delaySeconds` is capped at 600 seconds, or 10 minutes.
 - Only one delayed power action can be pending. A new delayed stop/restart replaces the previous pending action.

@@ -28,6 +28,7 @@ mcAI is an administration surface. Treat access to it like access to the Paper c
 - Downloads only support HTTP/HTTPS and validate every redirect target against the private-network policy.
 - The plugin refuses to start the MCP server unless `server.port` is set and differs from the Minecraft gameplay port.
 - `power_actions` can stop or restart the whole Minecraft server. MCP bearer auth is the security boundary for this operation.
+- Restart requires the `settings.restart-script` file configured in `spigot.yml` to exist.
 
 Prefer binding the MCP server to `127.0.0.1` and reaching it through a trusted local process, tunnel, or reverse proxy with its own access controls.
 

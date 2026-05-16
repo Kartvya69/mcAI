@@ -58,7 +58,7 @@ Dispatches Minecraft console commands and captures recent log output from `logs/
 
 ### `PowerActions`
 
-Owns whole-server stop and restart behavior for MCP. It validates the `stop`/`restart` action, caps delays at 600 seconds, returns structured scheduling metadata, and ensures only one delayed action is pending.
+Owns whole-server stop and restart behavior for MCP. It validates the `stop`/`restart` action, caps delays at 600 seconds, preflights the configured restart script before accepting restart, returns structured scheduling metadata, and ensures only one delayed action is pending.
 
 `BukkitNativePowerActionExecutor` calls Bukkit/Paper APIs directly:
 

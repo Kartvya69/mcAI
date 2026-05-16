@@ -274,6 +274,7 @@ Behavior:
 
 - `stop` calls `server.shutdown()`.
 - `restart` calls `server.spigot().restart()`.
+- `restart` first checks `settings.restart-script` from `spigot.yml` and rejects the call if the configured script file does not exist.
 - Immediate actions run through the server scheduler when needed.
 - Delayed actions use the global Paper/Folia scheduler.
 - Only one delayed power action is pending at a time. Scheduling another delayed stop/restart cancels and replaces the previous pending action.

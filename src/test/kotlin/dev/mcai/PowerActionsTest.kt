@@ -65,6 +65,24 @@ class PowerActionsTest {
     }
 
     @Test
+    fun `restart validation failure rejects action before execution or scheduling`() {
+        val executor = RecordingPowerActionExecutor(restartValidationError = IllegalStateException("restart script missing"))
+        val runner = RecordingPowerActionRunner()
+        val powerActions = PowerActions(executor, runner)
+
+        assertFailsWith<IllegalStateException> {
+            powerActions.perform(action = "restart", reason = null, delaySeconds = 0)
+        }
+        assertFailsWith<IllegalStateException> {
+            powerActions.perform(action = "restart", reason = null, delaySeconds = 30)
+        }
+
+        assertEquals(emptyList(), executor.restartReasons)
+        assertEquals(0, runner.runNowCount)
+        assertEquals(0, runner.delayedTasks.size)
+    }
+
+    @Test
     fun `delayed action schedules without immediate execution`() {
         val executor = RecordingPowerActionExecutor()
         val runner = RecordingPowerActionRunner()
@@ -108,9 +126,15 @@ class PowerActionsTest {
         assertEquals(listOf<String?>("second"), executor.restartReasons)
     }
 
-    private class RecordingPowerActionExecutor : NativePowerActionExecutor {
+    private class RecordingPowerActionExecutor(
+        private val restartValidationError: RuntimeException? = null,
+    ) : NativePowerActionExecutor {
         val stopReasons = mutableListOf<String?>()
         val restartReasons = mutableListOf<String?>()
+
+        override fun validateRestart() {
+            restartValidationError?.let { throw it }
+        }
 
         override fun stop(reason: String?) {
             stopReasons += reason

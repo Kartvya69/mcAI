@@ -1,9 +1,8 @@
 package dev.mcai
 
-import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.TimeUnit
+import java.nio.file.Files
+import java.nio.file.Path
 import java.util.function.Consumer
 import kotlinx.serialization.Serializable
 
@@ -20,6 +19,8 @@ interface PowerActionRunner {
 }
 
 interface NativePowerActionExecutor {
+    fun validateRestart() = Unit
+
     fun stop(reason: String?)
 
     fun restart(reason: String?)
@@ -61,6 +62,9 @@ class PowerActions(
         val normalizedReason = reason?.trim()?.takeIf { it.isNotEmpty() }
         require(delaySeconds in 0..MAX_POWER_ACTION_DELAY_SECONDS) {
             "delaySeconds must be between 0 and $MAX_POWER_ACTION_DELAY_SECONDS"
+        }
+        if (normalizedAction == "restart") {
+            executor.validateRestart()
         }
 
         if (delaySeconds == 0) {
@@ -139,6 +143,14 @@ class PowerActions(
 }
 
 class BukkitNativePowerActionExecutor(private val plugin: JavaPlugin) : NativePowerActionExecutor {
+    override fun validateRestart() {
+        val restartScript = restartScript()
+        require(restartScript.value.isNotBlank()) { "settings.restart-script must not be blank for restart" }
+        require(Files.isRegularFile(restartScript.path)) {
+            "settings.restart-script '${restartScript.value}' does not exist. Create it under the Minecraft server root or change spigot.yml before using restart."
+        }
+    }
+
     override fun stop(reason: String?) {
         announce("stop", reason)
         plugin.server.shutdown()
@@ -159,20 +171,23 @@ class BukkitNativePowerActionExecutor(private val plugin: JavaPlugin) : NativePo
             plugin.logger.warning("Failed to broadcast mcAI power action reason: ${throwable.message}")
         }
     }
+
+    private fun restartScript(): RestartScript {
+        val value = plugin.server.spigot().config.getString("settings.restart-script", "./start.sh") ?: "./start.sh"
+        val configuredPath = Path.of(value)
+        val root = plugin.server.worldContainer.toPath().toAbsolutePath().normalize()
+        val path = if (configuredPath.isAbsolute) configuredPath else root.resolve(configuredPath).normalize()
+        return RestartScript(value, path)
+    }
+
+    private data class RestartScript(val value: String, val path: Path)
 }
 
 class BukkitPowerActionRunner(private val plugin: JavaPlugin) : PowerActionRunner {
     override fun runNow(action: () -> Unit) {
-        if (Bukkit.isPrimaryThread()) {
-            action()
-            return
-        }
-
-        val future = CompletableFuture<Unit>()
         plugin.server.globalRegionScheduler.execute(plugin, Runnable {
-            complete(future, action)
+            action()
         })
-        future.get(10, TimeUnit.SECONDS)
     }
 
     override fun runLater(delaySeconds: Int, action: () -> Unit): PowerActionTask {
@@ -187,12 +202,4 @@ class BukkitPowerActionRunner(private val plugin: JavaPlugin) : PowerActionRunne
         }
     }
 
-    private fun complete(future: CompletableFuture<Unit>, action: () -> Unit) {
-        try {
-            action()
-            future.complete(Unit)
-        } catch (throwable: Throwable) {
-            future.completeExceptionally(throwable)
-        }
-    }
 }
