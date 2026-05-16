@@ -4,6 +4,7 @@ import kotlin.io.path.createDirectories
 import kotlin.io.path.createTempDirectory
 import kotlin.test.Test
 import kotlin.test.assertContains
+import kotlin.test.assertTrue
 
 class McAiMcpServerFactoryTest {
     @Test
@@ -18,5 +19,6 @@ class McAiMcpServerFactoryTest {
         ).create()
 
         assertContains(server.tools.keys, "power_actions")
+        assertTrue(server.tools.getValue("power_actions").tool.description?.contains("restart preflights settings.restart-script") == true)
     }
 }

@@ -141,7 +141,7 @@ class McAiMcpServerFactory(
         server.register("console_send_command", "Dispatch a Minecraft console command and return captured latest.log lines.", readOnly = false, schema = consoleSchema()) {
             console.sendCommand(it.requiredString("command"))
         }
-        server.register("power_actions", "Stop or restart the Minecraft server through native Bukkit/Paper APIs.", readOnly = false, schema = powerActionSchema()) {
+        server.register("power_actions", "Stop or restart the Minecraft server through native Bukkit/Paper APIs; restart preflights settings.restart-script.", readOnly = false, schema = powerActionSchema()) {
             powerActions.perform(
                 action = it.requiredString("action"),
                 reason = it.stringOrNull("reason"),
