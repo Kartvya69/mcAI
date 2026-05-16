@@ -2,16 +2,27 @@ package dev.mcai
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.websocket.WebSockets
+import io.ktor.client.plugins.websocket.webSocket
 import io.ktor.client.plugins.sse.SSE
 import io.ktor.client.request.bearerAuth
+import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import io.ktor.client.request.header
+import io.ktor.websocket.Frame
+import io.ktor.websocket.readText
 import io.modelcontextprotocol.kotlin.sdk.client.mcpStreamableHttp
 import io.modelcontextprotocol.kotlin.sdk.types.TextContent
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -19,10 +30,150 @@ import kotlin.io.path.createDirectories
 import kotlin.io.path.createTempDirectory
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 
 class McpHttpServerTest {
+    @Test
+    fun `websocket endpoint is disabled by default`() = runBlocking {
+        val root = createTempDirectory("mcai-ws-disabled")
+        root.resolve("logs").createDirectories()
+        val server = testServer(root = root, dispatchedCommands = mutableListOf())
+        val http = HttpClient(CIO)
+
+        try {
+            server.start()
+
+            val response = http.get("http://127.0.0.1:${server.boundPort}/mcp/ws") {
+                bearerAuth("secret")
+            }
+
+            assertEquals(HttpStatusCode.NotFound, response.status)
+        } finally {
+            http.close()
+            server.stop()
+        }
+        Unit
+    }
+
+    @Test
+    fun `websocket endpoint rejects missing and wrong bearer auth`() = runBlocking {
+        val root = createTempDirectory("mcai-ws-auth")
+        root.resolve("logs").createDirectories()
+        val server = testServer(root = root, dispatchedCommands = mutableListOf(), webSocketEnabled = true)
+        val http = HttpClient(CIO) {
+            install(WebSockets)
+        }
+
+        try {
+            server.start()
+
+            assertFailsWith<Exception> {
+                withTimeout(5_000) {
+                    http.webSocket(
+                        method = HttpMethod.Get,
+                        host = "127.0.0.1",
+                        port = server.boundPort,
+                        path = "/mcp/ws",
+                    ) {}
+                }
+            }
+            assertFailsWith<Exception> {
+                withTimeout(5_000) {
+                    http.webSocket(
+                        method = HttpMethod.Get,
+                        host = "127.0.0.1",
+                        port = server.boundPort,
+                        path = "/mcp/ws",
+                        request = {
+                            header(HttpHeaders.Authorization, "Bearer wrong")
+                        },
+                    ) {}
+                }
+            }
+        } finally {
+            http.close()
+            server.stop()
+        }
+        Unit
+    }
+
+    @Test
+    fun `websocket endpoint routes tool calls through existing services`() = runBlocking {
+        val root = createTempDirectory("mcai-ws-tools")
+        root.resolve("logs").createDirectories()
+        val dispatchedCommands = mutableListOf<String>()
+        val server = testServer(root = root, dispatchedCommands = dispatchedCommands, webSocketEnabled = true)
+        val http = HttpClient(CIO) {
+            install(WebSockets)
+        }
+
+        try {
+            server.start()
+
+            val write = callWebSocketTool(
+                http,
+                server.boundPort,
+                """
+                {"id":"write-1","tool":"fs_write_file","arguments":{"path":"plugins/ws.txt","content":"hello from ws","createParents":true}}
+                """.trimIndent(),
+            )
+            assertEquals("write-1", write["id"]?.jsonPrimitive?.content)
+            assertEquals(true, write["ok"]?.jsonPrimitive?.booleanOrNull)
+            assertEquals("plugins/ws.txt", write["result"]?.jsonObject?.get("path")?.jsonPrimitive?.content)
+
+            val read = callWebSocketTool(
+                http,
+                server.boundPort,
+                """
+                {"id":"read-1","tool":"fs_read_file","arguments":{"path":"plugins/ws.txt"}}
+                """.trimIndent(),
+            )
+            assertEquals(true, read["ok"]?.jsonPrimitive?.booleanOrNull)
+            assertEquals("hello from ws", read["result"]?.jsonObject?.get("content")?.jsonPrimitive?.content)
+
+            val console = callWebSocketTool(
+                http,
+                server.boundPort,
+                """
+                {"id":"console-1","tool":"console_send_command","arguments":{"command":"say websocket smoke"}}
+                """.trimIndent(),
+            )
+            assertEquals(true, console["ok"]?.jsonPrimitive?.booleanOrNull)
+            assertEquals(listOf("say websocket smoke"), dispatchedCommands)
+        } finally {
+            http.close()
+            server.stop()
+        }
+    }
+
+    @Test
+    fun `direct mcp endpoint still works when websocket is enabled`() = runBlocking {
+        val root = createTempDirectory("mcai-mcp-with-ws")
+        root.resolve("logs").createDirectories()
+        val server = testServer(root = root, dispatchedCommands = mutableListOf(), webSocketEnabled = true)
+        val http = HttpClient(CIO) {
+            install(SSE)
+        }
+
+        try {
+            server.start()
+            val client = http.mcpStreamableHttp("http://127.0.0.1:${server.boundPort}/mcp") {
+                bearerAuth("secret")
+            }
+
+            val tools = client.listTools().tools.map { it.name }
+
+            assertEquals(true, "fs_read_file" in tools)
+            assertEquals(true, "console_send_command" in tools)
+            client.close()
+        } finally {
+            http.close()
+            server.stop()
+        }
+    }
+
     @Test
     fun `mcp endpoint requires bearer auth and exposes filesystem tool calls`() = runBlocking {
         val root = createTempDirectory("mcai-mcp")
@@ -161,5 +312,56 @@ class McpHttpServerTest {
 
         override fun runLater(delaySeconds: Int, action: () -> Unit): PowerActionTask =
             PowerActionTask { }
+    }
+
+    private fun testServer(
+        root: java.nio.file.Path,
+        dispatchedCommands: MutableList<String>,
+        webSocketEnabled: Boolean = false,
+    ): KtorMcpHttpServer {
+        val fs = FileSystemTools(root, McAiLimits())
+        val console = ConsoleTools(
+            ConsoleCommandDispatcher { command ->
+                dispatchedCommands += command
+                true
+            },
+            LatestLogTailer(root.resolve("logs/latest.log")),
+            captureMillis = 0,
+        )
+        return KtorMcpHttpServer(
+            host = "127.0.0.1",
+            port = 0,
+            authToken = "secret",
+            mcpServerFactory = McAiMcpServerFactory(
+                fs,
+                console,
+                PowerActions(RecordingPowerActionExecutor(), ImmediatePowerActionRunner()),
+                version = "test",
+            ),
+            logger = TestPluginLogger(),
+            webSocketEnabled = webSocketEnabled,
+        )
+    }
+
+    private suspend fun callWebSocketTool(
+        http: HttpClient,
+        port: Int,
+        request: String,
+    ): kotlinx.serialization.json.JsonObject {
+        var response: kotlinx.serialization.json.JsonObject? = null
+        http.webSocket(
+            method = HttpMethod.Get,
+            host = "127.0.0.1",
+            port = port,
+            path = "/mcp/ws",
+            request = {
+                header(HttpHeaders.Authorization, "Bearer secret")
+            },
+        ) {
+            send(Frame.Text(request))
+            val frame = withTimeout(5_000) { incoming.receive() }
+            response = Json.parseToJsonElement((frame as Frame.Text).readText()).jsonObject
+        }
+        return checkNotNull(response)
     }
 }

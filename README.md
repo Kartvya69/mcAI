@@ -12,6 +12,8 @@ mcAI is a Paper/Folia plugin that exposes a bearer-protected MCP HTTP server for
 - Console command dispatch with recent `logs/latest.log` capture
 - Native `power_actions` tool for authenticated stop/restart operations
 - MCP server instructions that tell agents to inspect local plugin files first, then check official plugin docs or trusted sources before editing unfamiliar plugin configuration
+- Optional WebSocket API at `/mcp/ws` for the local `mcAI-fleet` stdio MCP gateway
+- Optional `mcai-fleet/` TypeScript gateway for routing the existing mcAI tool surface across multiple configured Minecraft servers
 - First-run config generation with a generated bearer token
 - Quiet runtime logging by default, with `logging.verbose` for raw MCP/Ktor/SDK debugging logs
 - Java 21, Kotlin, Ktor, and the MCP Kotlin SDK
@@ -28,6 +30,7 @@ mcAI is an administration surface. Treat access to it like access to the Paper c
 - Reads, writes, directory listings, and downloads are bounded by config limits.
 - Downloads only support HTTP/HTTPS and validate every redirect target against the private-network policy.
 - The plugin refuses to start the MCP server unless `server.port` is set and differs from the Minecraft gameplay port.
+- The WebSocket API is disabled by default and uses the same bearer token as `/mcp` when enabled.
 - `power_actions` can stop or restart the whole Minecraft server. MCP bearer auth is the security boundary for this operation.
 - Restart requires the `settings.restart-script` file configured in `spigot.yml` to exist.
 
@@ -117,6 +120,9 @@ pathIndex:
     - "world*/region/**"
     - "world*/entities/**"
 
+websocket:
+  enabled: false
+
 logging:
   verbose: false
 ```
@@ -125,6 +131,19 @@ logging:
 
 See [docs/OPERATIONS.md](docs/OPERATIONS.md) for deployment and safety notes.
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for component and runtime flow details.
+
+## Fleet Gateway
+
+Direct plugin MCP at `/mcp` remains the default. Use [mcai-fleet](mcai-fleet/README.md) when an agent should connect to one local stdio MCP server and route calls across multiple Minecraft servers.
+
+For each server that should be reachable through fleet, enable:
+
+```yaml
+websocket:
+  enabled: true
+```
+
+Then configure `mcai-fleet/mcai-fleet.config.json` from the example file. Fleet registers `server_list`, `server_status`, and the existing mcAI tool names with an added required `serverId` argument.
 
 ## MCP Tools
 

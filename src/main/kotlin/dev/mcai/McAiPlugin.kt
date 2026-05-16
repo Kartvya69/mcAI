@@ -56,6 +56,7 @@ open class McAiPlugin : JavaPlugin() {
             ),
             logger = logger,
             verboseLogging = config.logging.verbose,
+            webSocketEnabled = config.websocket.enabled,
         )
 
         try {

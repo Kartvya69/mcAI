@@ -144,6 +144,60 @@ Quiet mode suppresses routine noise:
 
 Temporarily set `logging.verbose: true` when debugging MCP protocol negotiation, raw SDK transport behavior, or individual tool-call flow. Return it to `false` for normal operation to keep `logs/latest.log` readable.
 
+## Optional WebSocket and Fleet Gateway
+
+Direct MCP at `/mcp` is the default. Leave WebSocket disabled unless you are using the local `mcAI-fleet` stdio gateway.
+
+Enable the WebSocket API per Minecraft server:
+
+```yaml
+websocket:
+  enabled: true
+```
+
+When enabled, mcAI serves:
+
+```text
+ws://<server.host>:<server.port>/mcp/ws
+```
+
+The WebSocket API uses the same `auth.token` as `/mcp`. Missing or wrong bearer auth is rejected during the handshake.
+
+Fleet setup from the repository root:
+
+```bash
+cd mcai-fleet
+npm install
+cp mcai-fleet.config.example.json mcai-fleet.config.json
+npm test
+npm run build
+```
+
+Configure each server in `mcai-fleet.config.json`:
+
+```json
+{
+  "requestTimeoutMillis": 5000,
+  "servers": [
+    {
+      "id": "survival",
+      "name": "Survival",
+      "url": "ws://127.0.0.1:25577/mcp/ws",
+      "token": "<plugins/mcAI/config.yml auth.token>"
+    }
+  ]
+}
+```
+
+`mcai-fleet.config.json` is ignored by git because it contains bearer tokens. Register the built stdio server with your MCP client:
+
+```bash
+MCAI_FLEET_CONFIG=/root/mcAI/mcai-fleet/mcai-fleet.config.json \
+  node /root/mcAI/mcai-fleet/dist/index.js
+```
+
+Fleet adds `server_list` and `server_status`. Existing mcAI tool names are preserved and require an added `serverId` argument.
+
 ## Power Actions
 
 `power_actions` is a write-capable MCP tool for whole-server stop and restart operations.

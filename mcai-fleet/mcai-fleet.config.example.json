@@ -1,0 +1,11 @@
+{
+  "requestTimeoutMillis": 5000,
+  "servers": [
+    {
+      "id": "survival",
+      "name": "Survival",
+      "url": "ws://127.0.0.1:25577/mcp/ws",
+      "token": "replace-with-plugins-mcAI-config-yml-auth-token"
+    }
+  ]
+}

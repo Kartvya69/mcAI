@@ -35,6 +35,85 @@ class McAiMcpServerFactory(
     private val logger: Logger = Logger.getLogger(McAiMcpServerFactory::class.java.name),
     private val verboseLogging: Boolean = false,
 ) {
+    fun callTool(name: String, arguments: JsonObject = JsonObject(emptyMap())): McAiToolCallResult {
+        if (verboseLogging) {
+            logger.info("MCP tool call: $name")
+        }
+        return try {
+            McAiToolCallResult.Success(executeTool(name, arguments))
+        } catch (throwable: Throwable) {
+            logger.warning("MCP tool error in $name: ${throwable.message}")
+            McAiToolCallResult.Error(
+                buildJsonObject {
+                    putJsonObject("error") {
+                        put("type", throwable::class.simpleName ?: "Throwable")
+                        put("message", throwable.message ?: "")
+                    }
+                },
+                "${throwable::class.simpleName}: ${throwable.message}",
+            )
+        }
+    }
+
+    private fun executeTool(name: String, arguments: JsonObject): JsonObject =
+        when (name) {
+            "fs_read_file" -> encodeToolResult(fs.readFile(ReadFileRequest(arguments.requiredString("path"), arguments.string("encoding", "text"), arguments.long("offset", 0), arguments.intOrNull("length"))))
+            "fs_read_many_files" -> encodeToolResult(fs.readManyFiles(ReadManyFilesRequest(arguments.requiredStringArray("paths"), arguments.string("encoding", "text"), arguments.intOrNull("maxBytesPerFile"))))
+            "fs_write_file" -> encodeToolResult(fs.writeFile(WriteFileRequest(arguments.requiredString("path"), arguments.requiredString("content"), arguments.string("encoding", "text"), arguments.bool("createParents", false))))
+            "fs_edit_file" -> encodeToolResult(fs.editFile(EditFileRequest(arguments.requiredString("path"), arguments.requiredString("oldText"), arguments.requiredString("newText"), arguments.bool("replaceAll", false))))
+            "fs_append_file" -> encodeToolResult(fs.appendFile(AppendFileRequest(arguments.requiredString("path"), arguments.requiredString("content"), arguments.string("encoding", "text"), arguments.bool("createParents", false))))
+            "fs_download_file" -> encodeToolResult(
+                fs.downloadFile(
+                    DownloadFileRequest(
+                        url = arguments.requiredString("url"),
+                        path = arguments.requiredString("path"),
+                        overwrite = arguments.bool("overwrite", true),
+                        createParents = arguments.bool("createParents", false),
+                        sha256 = arguments.stringOrNull("sha256"),
+                    ),
+                ),
+            )
+            "fs_list_directory" -> encodeToolResult(fs.listDirectory(ListDirectoryRequest(arguments.string("path", "."))))
+            "fs_directory_tree" -> encodeToolResult(fs.directoryTree(DirectoryTreeRequest(arguments.string("path", "."), arguments.int("maxDepth", 10))))
+            "fs_create_directory" -> encodeToolResult(fs.createDirectory(CreateDirectoryRequest(arguments.requiredString("path"))))
+            "fs_move" -> encodeToolResult(fs.move(MoveRequest(arguments.requiredString("source"), arguments.requiredString("destination"), arguments.bool("overwrite", true), arguments.bool("createParents", false))))
+            "fs_copy" -> encodeToolResult(fs.copy(CopyRequest(arguments.requiredString("source"), arguments.requiredString("destination"), arguments.bool("overwrite", true), arguments.bool("createParents", false))))
+            "fs_delete" -> encodeToolResult(fs.delete(DeleteRequest(arguments.requiredString("path"), arguments.bool("recursive", false))))
+            "fs_stat" -> encodeToolResult(fs.stat(StatRequest(arguments.requiredString("path"))))
+            "fs_search_files" -> encodeToolResult(fs.searchFiles(SearchFilesRequest(arguments.string("path", "."), arguments.requiredString("query"), arguments.string("glob", "**/*"), arguments.int("maxResults", 100))))
+            "fs_find_paths" -> encodeToolResult(
+                fs.findPaths(
+                    FindPathsRequest(
+                        query = arguments.requiredString("query"),
+                        path = arguments.string("path", "."),
+                        glob = arguments.string("glob", "**/*"),
+                        maxResults = arguments.int("maxResults", 100),
+                        includeDirectories = arguments.bool("includeDirectories", false),
+                        useIndex = arguments.bool("useIndex", true),
+                    ),
+                ),
+            )
+            "fs_search_content" -> encodeToolResult(fs.searchContent(SearchContentRequest(arguments.string("path", "."), arguments.requiredString("query"), arguments.bool("regex", false), arguments.string("glob", "**/*"), arguments.int("maxResults", 100))))
+            "fs_tail_file" -> encodeToolResult(fs.tailFile(TailFileRequest(arguments.requiredString("path"), arguments.int("lines", 100))))
+            "config_properties_get" -> encodeToolResult(fs.configPropertiesGet(ConfigPropertiesGetRequest(arguments.requiredString("path"), arguments.requiredString("key"))))
+            "config_properties_set" -> encodeToolResult(fs.configPropertiesSet(ConfigPropertiesSetRequest(arguments.requiredString("path"), arguments.requiredString("key"), arguments.requiredString("value"))))
+            "config_properties_remove" -> encodeToolResult(fs.configPropertiesRemove(ConfigPropertiesRemoveRequest(arguments.requiredString("path"), arguments.requiredString("key"))))
+            "config_properties_list" -> encodeToolResult(fs.configPropertiesList(ConfigPropertiesListRequest(arguments.requiredString("path"))))
+            "config_json_get" -> encodeToolResult(fs.configJsonGet(ConfigJsonGetRequest(arguments.requiredString("path"), arguments.requiredString("pointer"))))
+            "config_json_set" -> encodeToolResult(fs.configJsonSet(ConfigJsonSetRequest(arguments.requiredString("path"), arguments.requiredString("pointer"), arguments.requiredJson("value"))))
+            "config_json_remove" -> encodeToolResult(fs.configJsonRemove(ConfigJsonRemoveRequest(arguments.requiredString("path"), arguments.requiredString("pointer"))))
+            "config_json_append" -> encodeToolResult(fs.configJsonAppend(ConfigJsonAppendRequest(arguments.requiredString("path"), arguments.requiredString("pointer"), arguments.requiredJson("value"))))
+            "console_send_command" -> encodeToolResult(console.sendCommand(arguments.requiredString("command")))
+            "power_actions" -> encodeToolResult(
+                powerActions.perform(
+                    action = arguments.requiredString("action"),
+                    reason = arguments.stringOrNull("reason"),
+                    delaySeconds = arguments.int("delaySeconds", 0),
+                ),
+            )
+            else -> throw IllegalArgumentException("Unknown tool: $name")
+        }
+
     fun create(): Server {
         val server = Server(
             Implementation(name = "mcAI", version = version),
@@ -197,6 +276,9 @@ class McAiMcpServerFactory(
             structuredContent = json,
         )
     }
+
+    private inline fun <reified T> encodeToolResult(value: T): JsonObject =
+        McpJson.encodeToJsonElement(value).jsonObject
 
     private fun fileReadSchema(): ToolSchema = objectSchema(
         "path" to stringSchema("Relative file path"),
@@ -411,6 +493,12 @@ private fun JsonObject.long(name: String, default: Long): Long =
 
 private fun JsonObject.requiredJson(name: String): kotlinx.serialization.json.JsonElement =
     this[name] ?: throw IllegalArgumentException("Missing required JSON argument: $name")
+
+sealed interface McAiToolCallResult {
+    data class Success(val result: JsonObject) : McAiToolCallResult
+
+    data class Error(val error: JsonObject, val text: String) : McAiToolCallResult
+}
 
 const val MCAI_MCP_SERVER_INSTRUCTIONS: String = """
 Use a docs-first workflow for Minecraft plugin administration.

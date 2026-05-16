@@ -20,6 +20,7 @@ dependencies {
     implementation(libs.ktor.server.content.negotiation)
     implementation(libs.ktor.server.cors)
     implementation(libs.ktor.server.sse)
+    implementation(libs.ktor.server.websockets)
     implementation(libs.mcp.kotlin.server)
     implementation(libs.snakeyaml)
 
@@ -27,6 +28,7 @@ dependencies {
     testImplementation(platform(libs.ktor.bom))
     testImplementation("org.junit.jupiter:junit-jupiter:6.0.3")
     testImplementation(libs.ktor.client.cio)
+    testImplementation(libs.ktor.client.websockets)
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.mcp.kotlin.client)
     testImplementation(libs.mockbukkit)

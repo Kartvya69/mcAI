@@ -1,6 +1,6 @@
 # Architecture
 
-mcAI is intentionally plugin-only. It runs inside Paper/Folia and starts an authenticated Ktor MCP HTTP endpoint when configured.
+mcAI is intentionally plugin-only for each Minecraft server. The plugin runs inside Paper/Folia and starts an authenticated Ktor MCP HTTP endpoint when configured. The optional `mcai-fleet/` project is a local stdio MCP gateway that agents run outside Minecraft to route across multiple plugin instances.
 
 ## Runtime Flow
 
@@ -16,6 +16,7 @@ mcAI is intentionally plugin-only. It runs inside Paper/Folia and starts an auth
    - `KtorMcpHttpServer`
 6. `KtorMcpHttpServer` serves MCP at `/mcp`.
 7. `McAiMcpServerFactory` registers the public tool surface and MCP server instructions.
+8. If `websocket.enabled` is true, `KtorMcpHttpServer` also serves the fleet WebSocket API at `/mcp/ws`.
 
 ## Main Components
 
@@ -32,9 +33,10 @@ Defines config data and first-run generation:
 - file/read/write limits
 - downloader policy
 - path index policy
+- optional WebSocket API flag
 - quiet/verbose runtime logging
 
-Existing config files are rewritten after load so missing sections, including `logging.verbose`, are backfilled with defaults.
+Existing config files are rewritten after load so missing sections, including `websocket.enabled` and `logging.verbose`, are backfilled with defaults.
 
 ### `McAiLoggingControls`
 
@@ -44,9 +46,24 @@ Applies the `logging.verbose` setting before the Ktor MCP server starts. Quiet m
 
 Hosts the MCP stateless streamable HTTP transport. It enforces bearer authentication before requests reach MCP tool handling.
 
+When `websocket.enabled` is true, it also installs Ktor WebSockets and exposes `/mcp/ws` on the same configured mcAI port. The WebSocket route uses the same bearer token and dispatches JSON request frames to `McAiMcpServerFactory.callTool`.
+
 ### `McAiMcpServerFactory`
 
-Registers all MCP tools and maps JSON arguments to typed request objects. It returns structured JSON results and structured error payloads. It also sets MCP initialization instructions for docs-first plugin-configuration work and tells agents to use `power_actions` for stop/restart.
+Registers all MCP tools and maps JSON arguments to typed request objects. It returns structured JSON results and structured error payloads. It also exposes matching tool dispatch for the WebSocket API against the same backend services. It sets MCP initialization instructions for docs-first plugin-configuration work and tells agents to use `power_actions` for stop/restart.
+
+### `mcai-fleet/`
+
+Optional TypeScript stdio MCP gateway for multi-server routing. It:
+
+- loads `mcai-fleet.config.json`
+- validates configured `id`, `name`, `url`, and `token`
+- registers `server_list` and `server_status`
+- registers the existing mcAI tool names with a required `serverId`
+- opens authenticated WebSocket connections lazily
+- returns structured errors for unknown servers, offline servers, auth failures, timeouts, and plugin tool errors
+
+Fleet does not replace the plugin-hosted `/mcp` endpoint; it is an agent-facing routing layer for operators who want one local MCP registration for multiple Minecraft servers.
 
 ### `FileSystemTools`
 
@@ -108,6 +125,7 @@ The test suite covers:
 
 - config generation and startup decisions
 - MCP auth and tool calls through Ktor
+- optional WebSocket route default-disabled/auth/tool-routing behavior
 - filesystem jail behavior
 - downloader SSRF, timeout, checksum, and cleanup cases
 - indexed finder behavior
@@ -115,3 +133,4 @@ The test suite covers:
 - console dispatch behavior
 - native power action validation, immediate execution, delayed scheduling, and replacement
 - MockBukkit plugin lifecycle behavior
+- fleet config parsing, registry lookup, mock WebSocket routing, error handling, and MCP tool schema coverage

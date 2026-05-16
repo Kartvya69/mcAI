@@ -55,6 +55,66 @@ During MCP initialization, mcAI sends agent guidance for plugin configuration wo
 - Do not rely only on training data for unknown plugins.
 - Use `power_actions` for stop/restart operations instead of dispatching `stop` or `restart` through `console_send_command`.
 
+## Optional WebSocket API
+
+Direct MCP at `/mcp` is the default and remains backward compatible. When `websocket.enabled: true` is set in `plugins/mcAI/config.yml`, mcAI also exposes:
+
+```text
+ws://<host>:<port>/mcp/ws
+```
+
+The WebSocket route uses the same bearer token as `/mcp`:
+
+```http
+Authorization: Bearer <token>
+```
+
+The route is intended for `mcAI-fleet`, the local stdio MCP gateway in `mcai-fleet/`. Requests and responses are JSON text frames.
+
+Request:
+
+```json
+{
+  "id": "1",
+  "tool": "fs_read_file",
+  "arguments": {
+    "path": "server.properties"
+  }
+}
+```
+
+Success response:
+
+```json
+{
+  "id": "1",
+  "ok": true,
+  "result": {
+    "path": "server.properties",
+    "encoding": "text",
+    "content": "...",
+    "bytesRead": 123,
+    "offset": 0,
+    "truncated": false
+  }
+}
+```
+
+Error response:
+
+```json
+{
+  "id": "1",
+  "ok": false,
+  "error": {
+    "type": "PathOutsideServerRootException",
+    "message": "Path is outside the Minecraft server root: ../server.properties"
+  }
+}
+```
+
+The WebSocket API routes into the same filesystem, config, console, and power-action services as the direct MCP tools.
+
 ## File Tools
 
 | Tool | Access | Required arguments | Optional arguments | Result |

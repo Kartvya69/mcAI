@@ -32,5 +32,8 @@ pathIndex:
     - "world*/region/**"
     - "world*/entities/**"
 
+websocket:
+  enabled: false
+
 logging:
   verbose: false

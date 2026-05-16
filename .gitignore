@@ -3,6 +3,9 @@
 build/
 run/
 out/
+node_modules/
+mcai-fleet/dist/
+mcai-fleet/mcai-fleet.config.json
 
 *.class
 *.log
