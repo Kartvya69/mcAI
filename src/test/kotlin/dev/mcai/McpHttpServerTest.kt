@@ -28,12 +28,26 @@ class McpHttpServerTest {
         val root = createTempDirectory("mcai-mcp")
         root.resolve("logs").createDirectories()
         val fs = FileSystemTools(root, McAiLimits())
-        val console = ConsoleTools(ConsoleCommandDispatcher { true }, LatestLogTailer(root.resolve("logs/latest.log")), captureMillis = 0)
+        val dispatchedCommands = mutableListOf<String>()
+        val console = ConsoleTools(
+            ConsoleCommandDispatcher { command ->
+                dispatchedCommands += command
+                true
+            },
+            LatestLogTailer(root.resolve("logs/latest.log")),
+            captureMillis = 0,
+        )
+        val powerActionExecutor = RecordingPowerActionExecutor()
         val server = KtorMcpHttpServer(
             host = "127.0.0.1",
             port = 0,
             authToken = "secret",
-            mcpServerFactory = McAiMcpServerFactory(fs, console, version = "test"),
+            mcpServerFactory = McAiMcpServerFactory(
+                fs,
+                console,
+                PowerActions(powerActionExecutor, ImmediatePowerActionRunner()),
+                version = "test",
+            ),
             logger = TestPluginLogger(),
         )
         server.start()
@@ -52,6 +66,8 @@ class McpHttpServerTest {
             val client = http.mcpStreamableHttp(url) {
                 bearerAuth("secret")
             }
+            assertEquals(true, client.serverInstructions?.contains("official plugin docs") == true)
+
             val tools = client.listTools().tools.map { it.name }
             assertEquals(true, "fs_write_file" in tools)
             assertEquals(true, "fs_download_file" in tools)
@@ -59,6 +75,7 @@ class McpHttpServerTest {
             assertEquals(true, "config_properties_set" in tools)
             assertEquals(true, "config_json_set" in tools)
             assertEquals(true, "console_send_command" in tools)
+            assertEquals(true, "power_actions" in tools)
 
             val writeResult = client.callTool(
                 name = "fs_write_file",
@@ -99,10 +116,50 @@ class McpHttpServerTest {
             assertEquals(true, errorResult.isError)
             assertEquals("PathOutsideServerRootException", errorResult.structuredContent?.get("error")?.jsonObject?.get("type")?.jsonPrimitive?.content)
 
+            val consoleResult = client.callTool(
+                name = "console_send_command",
+                arguments = mapOf("command" to "say mcAI integration smoke"),
+            )
+            assertEquals(false, consoleResult.isError)
+            assertEquals(listOf("say mcAI integration smoke"), dispatchedCommands)
+
+            val powerResult = client.callTool(
+                name = "power_actions",
+                arguments = mapOf("action" to "stop", "reason" to "integration test"),
+            )
+            assertEquals(false, powerResult.isError)
+            assertEquals("stop", powerResult.structuredContent?.get("action")?.jsonPrimitive?.content)
+            assertEquals("false", powerResult.structuredContent?.get("scheduled")?.jsonPrimitive?.content)
+            assertEquals(listOf<String?>("integration test"), powerActionExecutor.stopReasons)
+
+            val invalidPowerResult = client.callTool(
+                name = "power_actions",
+                arguments = mapOf("action" to "reload"),
+            )
+            assertEquals(true, invalidPowerResult.isError)
+            assertEquals("IllegalArgumentException", invalidPowerResult.structuredContent?.get("error")?.jsonObject?.get("type")?.jsonPrimitive?.content)
+
             client.close()
         } finally {
             http.close()
             server.stop()
         }
+    }
+
+    private class RecordingPowerActionExecutor : NativePowerActionExecutor {
+        val stopReasons = mutableListOf<String?>()
+
+        override fun stop(reason: String?) {
+            stopReasons += reason
+        }
+
+        override fun restart(reason: String?) = Unit
+    }
+
+    private class ImmediatePowerActionRunner : PowerActionRunner {
+        override fun runNow(action: () -> Unit) = action()
+
+        override fun runLater(delaySeconds: Int, action: () -> Unit): PowerActionTask =
+            PowerActionTask { }
     }
 }

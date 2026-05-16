@@ -1,6 +1,6 @@
 # mcAI
 
-mcAI is a Paper/Folia plugin that exposes a bearer-protected MCP HTTP server for Minecraft server administration. It gives trusted MCP clients a controlled way to inspect and edit files under the server root, update common config formats, discover paths, download artifacts, and dispatch console commands.
+mcAI is a Paper/Folia plugin that exposes a bearer-protected MCP HTTP server for Minecraft server administration. It gives trusted MCP clients a controlled way to inspect and edit files under the server root, update common config formats, discover paths, download artifacts, dispatch console commands, and run native server stop/restart actions.
 
 ## Features
 
@@ -10,6 +10,8 @@ mcAI is a Paper/Folia plugin that exposes a bearer-protected MCP HTTP server for
 - Indexed path discovery through `fs_find_paths` with freshness metadata and default excludes for large cache/world data
 - Structured config tools for Java `.properties` files and JSON pointer edits
 - Console command dispatch with recent `logs/latest.log` capture
+- Native `power_actions` tool for authenticated stop/restart operations
+- MCP server instructions that tell agents to inspect local plugin files first, then check official plugin docs or trusted sources before editing unfamiliar plugin configuration
 - First-run config generation with a generated bearer token
 - Java 21, Kotlin, Ktor, and the MCP Kotlin SDK
 
@@ -25,6 +27,7 @@ mcAI is an administration surface. Treat access to it like access to the Paper c
 - Reads, writes, directory listings, and downloads are bounded by config limits.
 - Downloads only support HTTP/HTTPS and validate every redirect target against the private-network policy.
 - The plugin refuses to start the MCP server unless `server.port` is set and differs from the Minecraft gameplay port.
+- `power_actions` can stop or restart the whole Minecraft server. MCP bearer auth is the security boundary for this operation.
 
 Prefer binding the MCP server to `127.0.0.1` and reaching it through a trusted local process, tunnel, or reverse proxy with its own access controls.
 
@@ -128,6 +131,7 @@ Main tool families:
 - `config_properties_get`, `config_properties_set`, `config_properties_remove`, `config_properties_list`
 - `config_json_get`, `config_json_set`, `config_json_remove`, `config_json_append`
 - `console_send_command`
+- `power_actions`
 
 See [docs/MCP_TOOLS.md](docs/MCP_TOOLS.md) for arguments, access classification, outputs, and examples.
 

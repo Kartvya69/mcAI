@@ -30,6 +30,7 @@ import java.util.logging.Logger
 class McAiMcpServerFactory(
     private val fs: FileSystemTools,
     private val console: ConsoleTools,
+    private val powerActions: PowerActions,
     private val version: String,
     private val logger: Logger = Logger.getLogger(McAiMcpServerFactory::class.java.name),
 ) {
@@ -42,6 +43,7 @@ class McAiMcpServerFactory(
                     logging = ServerCapabilities.Logging,
                 ),
             ),
+            MCAI_MCP_SERVER_INSTRUCTIONS,
         )
 
         server.register("fs_read_file", "Read a text or base64 file under the Minecraft server root.", readOnly = true, schema = fileReadSchema()) {
@@ -138,6 +140,13 @@ class McAiMcpServerFactory(
         }
         server.register("console_send_command", "Dispatch a Minecraft console command and return captured latest.log lines.", readOnly = false, schema = consoleSchema()) {
             console.sendCommand(it.requiredString("command"))
+        }
+        server.register("power_actions", "Stop or restart the Minecraft server through native Bukkit/Paper APIs.", readOnly = false, schema = powerActionSchema()) {
+            powerActions.perform(
+                action = it.requiredString("action"),
+                reason = it.stringOrNull("reason"),
+                delaySeconds = it.int("delaySeconds", 0),
+            )
         }
 
         return server
@@ -288,6 +297,13 @@ class McAiMcpServerFactory(
         required = listOf("command"),
     )
 
+    private fun powerActionSchema(): ToolSchema = objectSchema(
+        "action" to enumSchema("stop", "restart"),
+        "reason" to stringSchema("Reason to broadcast and log when the action runs"),
+        "delaySeconds" to boundedIntegerSchema("Delay before running the action, from 0 to 600 seconds", 0, 600),
+        required = listOf("action"),
+    )
+
     private fun propertiesKeySchema(): ToolSchema = objectSchema(
         "path" to stringSchema("Relative .properties file path"),
         "key" to stringSchema("Property key"),
@@ -330,6 +346,13 @@ class McAiMcpServerFactory(
     private fun integerSchema(description: String): JsonObject = buildJsonObject {
         put("type", "integer")
         put("description", description)
+    }
+
+    private fun boundedIntegerSchema(description: String, minimum: Int, maximum: Int): JsonObject = buildJsonObject {
+        put("type", "integer")
+        put("description", description)
+        put("minimum", minimum)
+        put("maximum", maximum)
     }
 
     private fun booleanSchema(description: String): JsonObject = buildJsonObject {
@@ -385,3 +408,11 @@ private fun JsonObject.long(name: String, default: Long): Long =
 
 private fun JsonObject.requiredJson(name: String): kotlinx.serialization.json.JsonElement =
     this[name] ?: throw IllegalArgumentException("Missing required JSON argument: $name")
+
+const val MCAI_MCP_SERVER_INSTRUCTIONS: String = """
+Use a docs-first workflow for Minecraft plugin administration.
+
+Before modifying unfamiliar plugin configuration, inspect the local plugin files and current config under the Minecraft server root first. Then check the official plugin docs or another trusted current source for that plugin before editing behavior you do not already know. Do not rely only on training data for unknown plugins or config keys.
+
+Use mcAI filesystem and config tools within the server-root jail for file inspection and edits. Use console_send_command for ordinary Minecraft commands. Use power_actions for server stop and restart operations instead of dispatching stop or restart as generic console commands.
+"""

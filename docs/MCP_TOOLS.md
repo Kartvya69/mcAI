@@ -46,6 +46,15 @@ Tool failures return `isError: true` and a structured error payload.
 - Tools registered as read-only use `readOnlyHint: true`; write-capable tools use `readOnlyHint: false`.
 - All tools use `openWorldHint: false`.
 
+## Server Instructions
+
+During MCP initialization, mcAI sends agent guidance for plugin configuration work:
+
+- Inspect local plugin files and current config under the Minecraft server root before changing unfamiliar plugin configuration.
+- Check official plugin docs or another trusted current source before editing unknown plugin behavior or config keys.
+- Do not rely only on training data for unknown plugins.
+- Use `power_actions` for stop/restart operations instead of dispatching `stop` or `restart` through `console_send_command`.
+
 ## File Tools
 
 | Tool | Access | Required arguments | Optional arguments | Result |
@@ -247,3 +256,63 @@ Example:
 
 `capturedLines` contains new non-blank lines read from `logs/latest.log` after the command dispatch checkpoint. The capture window is controlled by `limits.commandCaptureMillis`.
 
+Use `console_send_command` for ordinary Minecraft commands. Use `power_actions` for whole-server stop/restart because it calls Bukkit/Paper APIs directly and exposes scheduling metadata.
+
+## Power Actions Tool
+
+| Tool | Access | Required arguments | Optional arguments | Result |
+| --- | --- | --- | --- | --- |
+| `power_actions` | Write | `action` | `reason`, `delaySeconds` | `action`, `scheduled`, `delaySeconds`, `replacedPendingAction`, `reason`, `message` |
+
+Arguments:
+
+- `action`: `stop` or `restart`.
+- `reason`: optional text. Blank text is ignored. When provided, mcAI logs and broadcasts it when the action runs.
+- `delaySeconds`: optional integer from `0` through `600`. Defaults to `0`.
+
+Behavior:
+
+- `stop` calls `server.shutdown()`.
+- `restart` calls `server.spigot().restart()`.
+- Immediate actions run through the server scheduler when needed.
+- Delayed actions use the global Paper/Folia scheduler.
+- Only one delayed power action is pending at a time. Scheduling another delayed stop/restart cancels and replaces the previous pending action.
+- Delayed actions are best effort and are lost if the plugin or server shuts down before the delay fires.
+
+Example immediate stop:
+
+```json
+{
+  "name": "power_actions",
+  "arguments": {
+    "action": "stop",
+    "reason": "scheduled maintenance"
+  }
+}
+```
+
+Example delayed restart:
+
+```json
+{
+  "name": "power_actions",
+  "arguments": {
+    "action": "restart",
+    "reason": "plugin update",
+    "delaySeconds": 300
+  }
+}
+```
+
+Result shape:
+
+```json
+{
+  "action": "restart",
+  "scheduled": true,
+  "delaySeconds": 300,
+  "replacedPendingAction": false,
+  "reason": "plugin update",
+  "message": "Scheduled server restart in 300 seconds."
+}
+```

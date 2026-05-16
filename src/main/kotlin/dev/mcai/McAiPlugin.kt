@@ -37,11 +37,15 @@ open class McAiPlugin : JavaPlugin() {
             logTailer = LatestLogTailer(root.resolve("logs/latest.log")),
             captureMillis = config.limits.commandCaptureMillis,
         )
+        val powerActions = PowerActions(
+            executor = BukkitNativePowerActionExecutor(this),
+            runner = BukkitPowerActionRunner(this),
+        )
         val mcpServer = KtorMcpHttpServer(
             host = bind.host,
             port = bind.port,
             authToken = config.auth.token,
-            mcpServerFactory = McAiMcpServerFactory(fs, console, description.version, logger),
+            mcpServerFactory = McAiMcpServerFactory(fs, console, powerActions, description.version, logger),
             logger = logger,
         )
 

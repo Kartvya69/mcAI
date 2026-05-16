@@ -117,6 +117,21 @@ Recommended practice:
 - Bind to `127.0.0.1` unless remote MCP access is required.
 - If remote access is required, use a reverse proxy, tunnel, VPN, or firewall outside the plugin.
 
+## Power Actions
+
+`power_actions` is a write-capable MCP tool for whole-server stop and restart operations.
+
+Security and safety notes:
+
+- MCP bearer authentication is the security boundary. Any client with the token can take the server offline.
+- `action: "stop"` calls the native Bukkit/Paper shutdown API.
+- `action: "restart"` calls the native Bukkit/Paper restart API.
+- Use `power_actions` for stop/restart instead of sending `stop` or `restart` through `console_send_command`.
+- `delaySeconds` is capped at 600 seconds, or 10 minutes.
+- Only one delayed power action can be pending. A new delayed stop/restart replaces the previous pending action.
+- Delayed power actions are in-process best effort and disappear if the server or plugin shuts down before the delay fires.
+- Provide `reason` when operators or players should see why the server is stopping or restarting.
+
 ## Downloader Policy
 
 `fs_download_file` is write-capable. Keep the default private-network blocking unless you deliberately need an internal artifact source.

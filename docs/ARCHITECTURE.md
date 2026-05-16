@@ -10,10 +10,11 @@ mcAI is intentionally plugin-only. It runs inside Paper/Folia and starts an auth
 4. If enabled, `McAiPlugin` creates:
    - `FileSystemTools`
    - `ConsoleTools`
+   - `PowerActions`
    - `McAiMcpServerFactory`
    - `KtorMcpHttpServer`
 5. `KtorMcpHttpServer` serves MCP at `/mcp`.
-6. `McAiMcpServerFactory` registers the public tool surface.
+6. `McAiMcpServerFactory` registers the public tool surface and MCP server instructions.
 
 ## Main Components
 
@@ -37,7 +38,7 @@ Hosts the MCP stateless streamable HTTP transport. It enforces bearer authentica
 
 ### `McAiMcpServerFactory`
 
-Registers all MCP tools and maps JSON arguments to typed request objects. It returns structured JSON results and structured error payloads.
+Registers all MCP tools and maps JSON arguments to typed request objects. It returns structured JSON results and structured error payloads. It also sets MCP initialization instructions for docs-first plugin-configuration work and tells agents to use `power_actions` for stop/restart.
 
 ### `FileSystemTools`
 
@@ -54,6 +55,17 @@ Primary server-root security boundary. It handles:
 ### `ConsoleTools`
 
 Dispatches Minecraft console commands and captures recent log output from `logs/latest.log`.
+
+### `PowerActions`
+
+Owns whole-server stop and restart behavior for MCP. It validates the `stop`/`restart` action, caps delays at 600 seconds, returns structured scheduling metadata, and ensures only one delayed action is pending.
+
+`BukkitNativePowerActionExecutor` calls Bukkit/Paper APIs directly:
+
+- `server.shutdown()` for stop
+- `server.spigot().restart()` for restart
+
+`BukkitPowerActionRunner` runs immediate actions on the server scheduler when needed and schedules delayed actions through the global Paper/Folia scheduler.
 
 ## Filesystem Boundary
 
@@ -93,5 +105,5 @@ The test suite covers:
 - indexed finder behavior
 - structured `.properties` and JSON editing
 - console dispatch behavior
+- native power action validation, immediate execution, delayed scheduling, and replacement
 - MockBukkit plugin lifecycle behavior
-
