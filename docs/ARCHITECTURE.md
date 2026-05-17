@@ -50,7 +50,7 @@ When `websocket.enabled` is true, it also installs Ktor WebSockets and exposes `
 
 ### `McAiMcpServerFactory`
 
-Registers all MCP tools and maps JSON arguments to typed request objects. It returns structured JSON results and structured error payloads. It also exposes matching tool dispatch for the WebSocket API against the same backend services. It sets MCP initialization instructions for docs-first plugin-configuration work and tells agents to use `power_actions` for stop/restart.
+Registers all MCP tools and maps JSON arguments to typed request objects. It returns structured JSON results and structured error payloads. It also exposes matching tool dispatch for the WebSocket API against the same backend services. It sets MCP initialization instructions for docs-first plugin-configuration work, tells agents to use `console_send_command` for ordinary commands, and makes `power_actions` the preferred stop/restart path.
 
 ### `mcai-fleet/`
 
@@ -61,6 +61,7 @@ Optional TypeScript stdio MCP gateway for multi-server routing. It:
 - registers `server_list` and `server_status`
 - registers the existing mcAI tool names with a required `serverId`
 - opens authenticated WebSocket connections lazily
+- actively probes WebSocket reachability for `server_status`
 - returns structured errors for unknown servers, offline servers, auth failures, timeouts, and plugin tool errors
 
 Fleet does not replace the plugin-hosted `/mcp` endpoint; it is an agent-facing routing layer for operators who want one local MCP registration for multiple Minecraft servers.

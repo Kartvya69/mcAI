@@ -19,7 +19,7 @@ export class FleetGateway {
     };
   }
 
-  serverStatus(serverId?: string): JsonObject {
+  async serverStatus(serverId?: string): Promise<JsonObject> {
     if (serverId) {
       const server = this.registry.get(serverId);
       return {
@@ -27,11 +27,17 @@ export class FleetGateway {
           id: server.id,
           name: server.name,
           url: server.url,
-          connected: this.clients.get(server.id)?.isConnected ?? false,
+          connected: await this.clientFor(server.id).probeConnection(),
         },
       };
     }
-    return this.listServers();
+    const servers = await Promise.all(
+      this.registry.list().map(async (server) => ({
+        ...server,
+        connected: await this.clientFor(server.id).probeConnection(),
+      })),
+    );
+    return { servers };
   }
 
   async callTool(serverId: string, tool: string, args: JsonObject): Promise<JsonObject> {

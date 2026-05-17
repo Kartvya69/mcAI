@@ -41,6 +41,15 @@ export class McAiFleetClient {
     return this.socket?.readyState === WebSocket.OPEN;
   }
 
+  async probeConnection(): Promise<boolean> {
+    try {
+      await this.connect();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   async callTool(tool: string, args: JsonObject): Promise<JsonObject> {
     const socket = await this.connect();
     const id = String(this.nextRequestId++);

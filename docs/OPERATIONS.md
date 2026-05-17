@@ -196,7 +196,7 @@ MCAI_FLEET_CONFIG=/root/mcAI/mcai-fleet/mcai-fleet.config.json \
   node /root/mcAI/mcai-fleet/dist/index.js
 ```
 
-Fleet adds `server_list` and `server_status`. Existing mcAI tool names are preserved and require an added `serverId` argument.
+Fleet adds `server_list` and `server_status`. `server_status` actively probes the selected server, or every configured server, with an authenticated WebSocket connection. Existing mcAI tool names are preserved and require an added `serverId` argument.
 
 ## Power Actions
 
@@ -208,7 +208,7 @@ Security and safety notes:
 - `action: "stop"` calls the native Bukkit/Paper shutdown API.
 - `action: "restart"` calls the native Bukkit/Paper restart API.
 - `action: "restart"` requires the `settings.restart-script` file configured in `spigot.yml` to exist. Paper passes this script to the OS shell when restarting.
-- Use `power_actions` for stop/restart instead of sending `stop` or `restart` through `console_send_command`.
+- Use `power_actions` for stop/restart. Do not send `stop` or `restart` through `console_send_command` unless `power_actions` is unavailable and the user explicitly accepts that fallback.
 - `delaySeconds` is capped at 600 seconds, or 10 minutes.
 - Only one delayed power action can be pending. A new delayed stop/restart replaces the previous pending action.
 - Delayed power actions are in-process best effort and disappear if the server or plugin shuts down before the delay fires.

@@ -18,4 +18,24 @@ describe("fleet MCP tool definitions", () => {
     assert.ok(FLEET_TOOL_DEFINITIONS.some((tool) => tool.name === "server_list"));
     assert.ok(FLEET_TOOL_DEFINITIONS.some((tool) => tool.name === "server_status"));
   });
+
+  it("describes console commands as ordinary commands with bounded latest log capture", () => {
+    const definition = FLEET_TOOL_DEFINITIONS.find((tool) => tool.name === "console_send_command");
+
+    assert.ok(definition);
+    assert.match(definition.description, /ordinary Minecraft commands/i);
+    assert.match(definition.description, /without a leading slash/i);
+    assert.match(definition.description, /bounded logs\/latest\.log capture/i);
+    assert.match(definition.inputSchema.shape.command.description ?? "", /without a leading slash/i);
+    assert.match(definition.inputSchema.shape.command.description ?? "", /not synchronous stdout/i);
+  });
+
+  it("describes power actions as the preferred stop and restart path", () => {
+    const definition = FLEET_TOOL_DEFINITIONS.find((tool) => tool.name === "power_actions");
+
+    assert.ok(definition);
+    assert.match(definition.description, /preferred/i);
+    assert.match(definition.description, /stop\/restart/i);
+    assert.match(definition.description, /native Bukkit\/Paper APIs/i);
+  });
 });

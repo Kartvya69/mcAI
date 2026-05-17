@@ -192,10 +192,20 @@ export const FLEET_TOOL_DEFINITIONS: FleetToolDefinition[] = [
     pointer: z.string(),
     value: jsonValue,
   }),
-  routedTool("console_send_command", "Dispatch a Minecraft console command and return captured latest.log lines.", false, {
-    command: z.string().min(1),
-  }),
-  routedTool("power_actions", "Stop or restart the Minecraft server through native Bukkit/Paper APIs.", false, {
+  routedTool(
+    "console_send_command",
+    "Dispatch ordinary Minecraft commands without a leading slash and return a bounded logs/latest.log capture, not synchronous stdout.",
+    false,
+    {
+      command: z
+        .string()
+        .min(1)
+        .describe(
+          "Ordinary Minecraft command without a leading slash; command output is inferred from bounded logs/latest.log capture, not synchronous stdout.",
+        ),
+    },
+  ),
+  routedTool("power_actions", "Preferred stop/restart path: stop or restart the Minecraft server through native Bukkit/Paper APIs.", false, {
     action: z.enum(["stop", "restart"]),
     reason: z.string().optional(),
     delaySeconds: z.number().int().min(0).max(600).optional(),

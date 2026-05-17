@@ -53,7 +53,8 @@ During MCP initialization, mcAI sends agent guidance for plugin configuration wo
 - Inspect local plugin files and current config under the Minecraft server root before changing unfamiliar plugin configuration.
 - Check official plugin docs or another trusted current source before editing unknown plugin behavior or config keys.
 - Do not rely only on training data for unknown plugins.
-- Use `power_actions` for stop/restart operations instead of dispatching `stop` or `restart` through `console_send_command`.
+- Use `console_send_command` for ordinary Minecraft commands without a leading slash.
+- Use `power_actions` for stop/restart operations. Do not dispatch `stop` or `restart` through `console_send_command` unless `power_actions` is unavailable and the user explicitly accepts that fallback.
 
 ## Optional WebSocket API
 
@@ -114,6 +115,8 @@ Error response:
 ```
 
 The WebSocket API routes into the same filesystem, config, console, and power-action services as the direct MCP tools.
+
+`mcAI-fleet` exposes `server_status` as an active reachability check. It opens an authenticated WebSocket connection to the selected server, or to each configured server when no `serverId` is provided, and reports `connected: false` for offline or auth-rejected servers without exposing bearer tokens.
 
 ## File Tools
 
@@ -301,7 +304,7 @@ Append example:
 | --- | --- | --- | --- |
 | `console_send_command` | Write | `command` | `dispatched`, `capturedLines` |
 
-The command should not include a leading slash.
+Use this for ordinary Minecraft commands. The command should not include a leading slash.
 
 Example:
 
@@ -314,9 +317,9 @@ Example:
 }
 ```
 
-`capturedLines` contains new non-blank lines read from `logs/latest.log` after the command dispatch checkpoint. The capture window is controlled by `limits.commandCaptureMillis`.
+`capturedLines` contains new non-blank lines read from `logs/latest.log` after the command dispatch checkpoint. The capture window is controlled by `limits.commandCaptureMillis`. This is a bounded log capture, not synchronous stdout from the command.
 
-Use `console_send_command` for ordinary Minecraft commands. Use `power_actions` for whole-server stop/restart because it calls Bukkit/Paper APIs directly and exposes scheduling metadata.
+Use `power_actions` for whole-server stop/restart because it calls Bukkit/Paper APIs directly and exposes scheduling metadata. Do not send `stop` or `restart` through `console_send_command` unless `power_actions` is unavailable and the user explicitly accepts that fallback.
 
 ## Power Actions Tool
 
@@ -332,6 +335,7 @@ Arguments:
 
 Behavior:
 
+- This is the preferred stop/restart path for agents.
 - `stop` calls `server.shutdown()`.
 - `restart` calls `server.spigot().restart()`.
 - `restart` first checks `settings.restart-script` from `spigot.yml` and rejects the call if the configured script file does not exist.

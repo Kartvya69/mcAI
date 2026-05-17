@@ -218,10 +218,10 @@ class McAiMcpServerFactory(
         server.register("config_json_append", "Append a JSON value to an array selected by JSON pointer in a file under the Minecraft server root.", readOnly = false, schema = jsonMutationSchema()) {
             fs.configJsonAppend(ConfigJsonAppendRequest(it.requiredString("path"), it.requiredString("pointer"), it.requiredJson("value")))
         }
-        server.register("console_send_command", "Dispatch a Minecraft console command and return captured latest.log lines.", readOnly = false, schema = consoleSchema()) {
+        server.register("console_send_command", "Dispatch ordinary Minecraft commands without a leading slash and return a bounded logs/latest.log capture, not synchronous stdout.", readOnly = false, schema = consoleSchema()) {
             console.sendCommand(it.requiredString("command"))
         }
-        server.register("power_actions", "Stop or restart the Minecraft server through native Bukkit/Paper APIs; restart preflights settings.restart-script.", readOnly = false, schema = powerActionSchema()) {
+        server.register("power_actions", "Preferred stop/restart path: stop or restart the Minecraft server through native Bukkit/Paper APIs; restart preflights settings.restart-script.", readOnly = false, schema = powerActionSchema()) {
             powerActions.perform(
                 action = it.requiredString("action"),
                 reason = it.stringOrNull("reason"),
@@ -378,7 +378,7 @@ class McAiMcpServerFactory(
     )
 
     private fun consoleSchema(): ToolSchema = objectSchema(
-        "command" to stringSchema("Minecraft console command without leading slash"),
+        "command" to stringSchema("Ordinary Minecraft command without a leading slash; command output is inferred from bounded logs/latest.log capture, not synchronous stdout"),
         required = listOf("command"),
     )
 
@@ -505,5 +505,5 @@ Use a docs-first workflow for Minecraft plugin administration.
 
 Before modifying unfamiliar plugin configuration, inspect the local plugin files and current config under the Minecraft server root first. Then check the official plugin docs or another trusted current source for that plugin before editing behavior you do not already know. Do not rely only on training data for unknown plugins or config keys.
 
-Use mcAI filesystem and config tools within the server-root jail for file inspection and edits. Use console_send_command for ordinary Minecraft commands. Use power_actions for server stop and restart operations instead of dispatching stop or restart as generic console commands.
+Use mcAI filesystem and config tools within the server-root jail for file inspection and edits. Use console_send_command for ordinary Minecraft commands without a leading slash. It returns a bounded logs/latest.log capture, not synchronous stdout. Use power_actions for server stop and restart operations. Do not use console_send_command with stop or restart unless power_actions is unavailable and the user explicitly accepts that fallback.
 """

@@ -38,7 +38,7 @@ export function createFleetMcpServer(gateway: FleetGateway): McpServer {
             return toolResult(gateway.listServers());
           }
           if (definition.name === "server_status") {
-            return toolResult(gateway.serverStatus((args as { serverId?: string }).serverId));
+            return toolResult(await gateway.serverStatus((args as { serverId?: string }).serverId));
           }
 
           const { serverId, ...toolArgs } = args as { serverId: string } & JsonObject;
