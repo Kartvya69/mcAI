@@ -2,6 +2,8 @@
   "name": "mcai-fleet",
   "version": "0.1.0",
   "description": "stdio MCP gateway for routing mcAI tool calls across multiple Minecraft servers",
+  "private": true,
+  "license": "UNLICENSED",
   "type": "module",
   "bin": {
     "mcai-fleet": "./dist/index.js"

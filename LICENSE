@@ -1,0 +1,40 @@
+XreatLabz Source-Available License
+
+Copyright (c) 2026 XreatLabz. All rights reserved.
+
+This repository is source-available, not open source. The public source is
+provided only so that people may inspect the code and submit issues or pull
+requests.
+
+Permission is granted to view, fork, clone, build, run, and test this
+repository only for evaluating the project or preparing contributions to
+XreatLabz.
+
+No other rights are granted. Without prior written permission from XreatLabz,
+you may not:
+
+- use this software in production or provide it as a hosted service;
+- copy, publish, distribute, sell, sublicense, or transfer this software;
+- rebrand, package, or redistribute builds or modified versions;
+- create derivative works except as needed to prepare a contribution back to
+  this repository;
+- remove or alter copyright, license, or attribution notices.
+
+Contributions
+
+By submitting a contribution, you confirm that you have the right to submit it
+and grant XreatLabz a perpetual, worldwide, non-exclusive, royalty-free,
+irrevocable license to use, reproduce, modify, distribute, sublicense, and
+relicense that contribution as part of this project or related XreatLabz
+projects.
+
+XreatLabz may accept, reject, modify, or remove contributions at its sole
+discretion.
+
+Third-Party Dependencies
+
+Third-party dependencies remain governed by their own licenses. This license
+applies only to code, documentation, and other materials owned by XreatLabz in
+this repository.
+
+Any permission not expressly granted above is reserved by XreatLabz.

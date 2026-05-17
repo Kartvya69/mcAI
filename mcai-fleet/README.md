@@ -74,3 +74,7 @@ MCAI_FLEET_CONFIG="$PWD/mcai-fleet.config.json" node dist/index.js
 MCP clients should launch the stdio command from this directory or set `MCAI_FLEET_CONFIG` to an absolute config path.
 
 Fleet registers the existing mcAI tool names and adds a required `serverId` argument to every routed tool. It also registers `server_list` and `server_status` for discovery.
+
+## License
+
+`mcAI-fleet` is covered by the repository root [XreatLabz Source-Available License](../LICENSE). It is not open source.

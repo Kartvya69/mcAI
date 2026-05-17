@@ -208,3 +208,11 @@ scripts/release-current-commit.sh
 ## Repository Hygiene
 
 The local Paper runtime under `run/`, Gradle caches, Kotlin session files, and build outputs are ignored. This repository should contain source, Gradle metadata, tests, and documentation, not generated server worlds or packaged runtime state.
+
+## License
+
+mcAI is source-available under the [XreatLabz Source-Available License](LICENSE). It is not open source.
+
+You may inspect the code and submit issues or pull requests. You may not use, redistribute, host, sell, rebrand, package, or create derivative works from this project except as expressly allowed in the license.
+
+Contributions are accepted under the terms in [CONTRIBUTING.md](CONTRIBUTING.md).
