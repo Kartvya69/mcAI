@@ -200,12 +200,13 @@ to its own MCP-capable platform.
 ```text
 Your goal is to add a stdio MCP server named "mcAI-fleet" to this platform.
 
+Use the mcAI repository at https://github.com/Kartvya69/mcAI/. Clone it if it
+is not already available locally.
+
 Use this platform's normal MCP setup method. If it has an MCP CLI, use that.
 If not, update its MCP config file directly.
 
-Ask the user for the details you need:
-- the absolute path to their cloned mcAI repository
-- where they want the fleet config saved, or permission for you to choose
+Ask the user for the Minecraft server details:
 - each Minecraft server id and display name
 - each server WebSocket URL, such as ws://127.0.0.1:25577/mcp/ws
 - each mcAI bearer token from plugins/mcAI/config.yml
@@ -215,7 +216,8 @@ The Minecraft server must have this enabled in plugins/mcAI/config.yml:
 websocket:
   enabled: true
 
-Create the fleet config wherever you and the user choose. Save it like this:
+Create the fleet config wherever it makes sense for this platform. Save it like
+this:
 
 {
   "requestTimeoutMillis": 5000,
@@ -229,7 +231,8 @@ Create the fleet config wherever you and the user choose. Save it like this:
   ]
 }
 
-In <mcAI repository>/mcai-fleet, install and build the gateway if needed:
+In the local mcAI clone's mcai-fleet directory, install and build the gateway if
+needed:
 
 npm install
 npm run build
@@ -238,10 +241,10 @@ Register the MCP server as:
 
 name: mcAI-fleet
 command: node
-args: ["<mcAI repository>/mcai-fleet/dist/index.js"]
+args: ["<local mcAI clone>/mcai-fleet/dist/index.js"]
 env:
   MCAI_FLEET_CONFIG: "<absolute path to the fleet config file>"
-cwd: "<mcAI repository>/mcai-fleet" if this platform supports cwd
+cwd: "<local mcAI clone>/mcai-fleet" if this platform supports cwd
 
 Do not commit or expose bearer tokens. After registration, reload the platform
 if needed, list the MCP tools, and call server_list to verify the gateway.
