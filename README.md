@@ -195,67 +195,56 @@ It also registers the existing mcAI tool names with an added required
 ## AI Agent Setup Prompt
 
 Copy this prompt into any AI coding agent when you want it to add `mcAI-fleet`
-to its own MCP-capable platform. Fill in the placeholders first.
+to its own MCP-capable platform.
 
 ```text
-You are configuring the mcAI Fleet stdio MCP server for this AI platform.
+Your goal is to add a stdio MCP server named "mcAI-fleet" to this platform.
 
-Goal:
-- Add a local stdio MCP server named "mcai-fleet".
-- The server routes Minecraft administration tool calls to one or more mcAI
-  Paper/Folia plugin instances over WebSocket.
-- Use this platform's native MCP registration mechanism if it has one. If it
-  does not, edit the platform's MCP config file directly.
+Use this platform's normal MCP setup method. If it has an MCP CLI, use that.
+If not, update its MCP config file directly.
 
-Inputs:
-- mcAI repository path: <absolute path to cloned mcAI repo>
-- Fleet config path: <absolute path to mcai-fleet.config.json>
-- Minecraft servers:
-  - id: <stable id such as survival>
-    name: <display name>
-    websocket_url: <ws://host:port/mcp/ws>
-    token: <plugins/mcAI/config.yml auth.token>
+Ask the user for the details you need:
+- the absolute path to their cloned mcAI repository
+- where they want the fleet config saved, or permission for you to choose
+- each Minecraft server id and display name
+- each server WebSocket URL, such as ws://127.0.0.1:25577/mcp/ws
+- each mcAI bearer token from plugins/mcAI/config.yml
 
-Required steps:
-1. Inspect this platform's MCP documentation or existing local MCP config so
-   the registration uses the correct shape for this client.
-2. Verify Node.js 20 or newer is available.
-3. In <mcAI repository path>/mcai-fleet, run:
-   - npm install
-   - npm test
-   - npm run build
-4. Create or update <Fleet config path> using mcai-fleet.config.example.json as
-   the template. Put each Minecraft server in the "servers" array with id,
-   name, url, and token.
-5. Keep tokens secret. Do not commit mcai-fleet.config.json or print token
-   values in final output.
-6. Register the MCP server as stdio with:
-   - command: node
-   - args: ["<mcAI repository path>/mcai-fleet/dist/index.js"]
-   - env:
-       MCAI_FLEET_CONFIG: "<Fleet config path>"
-   - cwd: "<mcAI repository path>/mcai-fleet" if the platform supports cwd
-7. Restart or reload the AI platform's MCP server list if required.
-8. Verify the connection by listing tools, then call server_list. If possible,
-   call server_status for each configured server.
+The Minecraft server must have this enabled in plugins/mcAI/config.yml:
 
-Important behavior:
-- mcAI-fleet exposes server_list and server_status.
-- Existing mcAI tool names are available through fleet, but each routed tool
-  requires a serverId argument.
-- The target Paper/Folia plugin must have websocket.enabled: true.
-- The WebSocket endpoint uses the same bearer token as the plugin's /mcp HTTP
-  endpoint.
-- For direct single-server MCP, use the plugin's Streamable HTTP endpoint at
-  http://host:port/mcp instead of fleet.
+websocket:
+  enabled: true
 
-Final response:
-- State which MCP config or command was changed.
-- State the registered command, args, cwd, and env key names, but redact token
-  values.
-- Include the exact verification performed and whether server_list/server_status
-  worked.
-- Mention any manual restart/reload still required by the platform.
+Create the fleet config wherever you and the user choose. Save it like this:
+
+{
+  "requestTimeoutMillis": 5000,
+  "servers": [
+    {
+      "id": "survival",
+      "name": "Survival",
+      "url": "ws://127.0.0.1:25577/mcp/ws",
+      "token": "<mcAI bearer token>"
+    }
+  ]
+}
+
+In <mcAI repository>/mcai-fleet, install and build the gateway if needed:
+
+npm install
+npm run build
+
+Register the MCP server as:
+
+name: mcAI-fleet
+command: node
+args: ["<mcAI repository>/mcai-fleet/dist/index.js"]
+env:
+  MCAI_FLEET_CONFIG: "<absolute path to the fleet config file>"
+cwd: "<mcAI repository>/mcai-fleet" if this platform supports cwd
+
+Do not commit or expose bearer tokens. After registration, reload the platform
+if needed, list the MCP tools, and call server_list to verify the gateway.
 ```
 
 ## Tool Surface
